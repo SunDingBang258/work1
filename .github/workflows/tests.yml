@@ -1,0 +1,57 @@
+name: Car CURD test
+
+on:
+  # push:
+  #   branches: [ "main" ]
+  pull_request:
+    branches: [ "github-actions-tests" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test_password
+          MYSQL_DATABASE: test_db
+        ports:
+            - 3306:3306
+        options: >- 
+            --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -ptest_password" 
+            --health-interval=10s 
+            --health-timeout=5s 
+            --health-retries=10
+    env:
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: test_password
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.12"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest httpx2
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Test with pytest
+      run: |
+        python -m pytest tests/unit/test_blank_model_is_rejected.py -v
+        python -m pytest test_deleting_one_car_keeps_the_other.py -v
+        python -m pytest test_user_edits_car_and_change_survives_reload.py -v
+        python -m pytest test_invalid_year_is_not_saved.py -v
+
