@@ -51,7 +51,7 @@ jobs:
     - name: Test with pytest
       run: |
         python -m pytest tests/unit/test_blank_model_is_rejected.py -v
-        python -m pytest test_deleting_one_car_keeps_the_other.py -v
-        python -m pytest test_user_edits_car_and_change_survives_reload.py -v
-        python -m pytest test_invalid_year_is_not_saved.py -v
+        python -m pytest tests/integration/test_deleting_one_car_keeps_the_other.py -v
+        python -m pytest tests/e2e/test_user_edits_car_and_change_survives_reload.py -v
+        python -m pytest tests/api/test_invalid_year_is_not_saved.py -v
 
