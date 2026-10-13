@@ -75,12 +75,21 @@ def create_app(database_config: dict | None = None) -> FastAPI:
     def get_car(car_id: CarId) -> Car:
         return require_car(car_id)
 
+    
     @application.put("/api/cars/{car_id}", response_model=Car, tags=["cars"])
     def update_car(car_id: CarId, car: CarInput) -> Car:
+        print("PUT car_id:", car_id, flush=True)
+        print("PUT payload:", car.model_dump(), flush=True)
+    
         updated = database.update_car(db_config, car_id, car)
+    
+        print("Updated car:", updated, flush=True)
+    
         if updated is None:
             raise HTTPException(status_code=404, detail="Car not found")
         return updated
+
+
 
     @application.delete("/api/cars/{car_id}", status_code=204, tags=["cars"])
     def delete_car(car_id: CarId) -> Response:
