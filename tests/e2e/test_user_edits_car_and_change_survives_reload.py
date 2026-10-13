@@ -25,7 +25,44 @@ def test_edits_car(page, live_server):
     response = response_info.value
     
     print("PUT status:", response.status, flush=True)
-    print("PUT response:", response.text(), flush=True)
+    # print("PUT response:", response.text(), flush=True)
+   #修改
+    with page.expect_response(
+        lambda response: "/api/cars/" in response.url
+        and response.request.method == "PUT"
+    ) as response_info:
+        page.get_by_role("button", name="Save changes").click()
+    
+    response = response_info.value
+    status = response.status
+    
+    # 先通过独立请求检查数据库中实际保存的数据
+    expect(page).to_have_url(re.compile(r"/cars/\d+$"))
+    
+    car_id = page.url.rstrip("/").split("/")[-1]
+    api_response = page.request.get(
+        f"{live_server}/api/cars/{car_id}"
+    )
+    
+    assert status == 200, f"PUT failed with HTTP {status}"
+    assert api_response.status == 200, (
+        f"GET failed with HTTP {api_response.status}"
+    )
+    
+    saved_car = api_response.json()
+    
+    assert saved_car["model"] == "Accord", (
+        f"Model was not saved: {saved_car}"
+    )
+    assert saved_car["year"] == 2023, (
+        f"Year was not saved: {saved_car}"
+    )
+    
+    expect(
+        page.get_by_role("heading", name="Honda Accord")
+    ).to_be_visible()
+
+#修改
     
     expect(page).to_have_url(re.compile(r"/cars/\d+$"))
     
