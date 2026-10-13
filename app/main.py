@@ -22,7 +22,7 @@ def create_app(database_config: dict | None = None) -> FastAPI:
         "host": os.environ.get("MYSQL_HOST", "127.0.0.1"),
         "port": int(os.environ.get("MYSQL_PORT", "3306")),
         "user": os.environ.get("MYSQL_USER", "root"),
-        "password": os.environ.get("MYSQL_PASSWORD", "139688"),
+        "password": os.environ.get("MYSQL_PASSWORD", ""),
         "database": os.environ.get("MYSQL_DATABASE", "test_db"),
     }
 

@@ -42,7 +42,7 @@ def database_path() -> dict:
         "host": os.getenv("MYSQL_HOST", "127.0.0.1"),
         "port": int(os.getenv("MYSQL_PORT", "3306")),
         "user": os.getenv("MYSQL_USER", "root"),
-        "password": os.environ.get("MYSQL_PASSWORD","139688"),
+        "password": os.environ.get("MYSQL_PASSWORD",""),
         "database": "test_db",
 }
 
