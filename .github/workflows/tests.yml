@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mysql:
-        image: mysql:8.
+        image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: test_password
           MYSQL_DATABASE: test_db
