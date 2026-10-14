@@ -1,5 +1,5 @@
 fastapi
 uvicorn
 pydantic
-PyMySQL
+PyMySQL[rsa]>=1.1,<2
 

@@ -25,11 +25,71 @@ from app.schemas import Car, CarInput
 #     finally:
 #         # sqlite3's connection context manager does NOT close the connection.
 #         connection.close()
+#
+# def get_connection(config: dict[str, Any]):
+#     """Create a new MySQL connection."""
+#     return pymysql.connect(
+#         host=config["host"],
+#         port=int(config.get("port", 3306)),
+#         user=config["user"],
+#         password=config["password"],
+#         database=config["database"],
+#         charset="utf8mb4",
+#         cursorclass=DictCursor,
+#         autocommit=False,
+#         connect_timeout=10,
+#     )
+# @contextmanager
+# def connect(config: dict[str, Any]) -> Iterator[Any]:
+#     """Commit on success, roll back on failure, and close the connection."""
+#     connection = get_connection(config)
+#     try:
+#         yield connection
+#         connection.commit()
+#     except Exception:
+#         connection.rollback()
+#         raise
+#     finally:
+#         connection.close()
+#
+# def initialize(config: dict[str, Any]) -> None:
+#     """Initialize the MySQL database."""
+#     with connect(config) as connection:
+#         with connection.cursor() as cursor:
+#             cursor.execute("""
+#                 CREATE TABLE IF NOT EXISTS cars (
+#                     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+#                     make VARCHAR(100) NOT NULL,
+#                     model VARCHAR(100) NOT NULL,
+#                     year INT NOT NULL,
+#                     color VARCHAR(50) NOT NULL
+#                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+#             """)
 
-def get_connection(config: dict[str, Any]):
+#################
+import os
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Any, Iterator
+
+import pymysql
+from pymysql.constants import CLIENT
+from pymysql.cursors import DictCursor
+
+
+def get_connection(config: dict[str, Any] | None = None):
     """Create a new MySQL connection."""
+    if config is None:
+        config = {
+            "host": os.environ.get("MYSQL_HOST", "db"),
+            "port": int(os.environ.get("MYSQL_PORT", "3306")),
+            "user": os.environ["MYSQL_USER"],
+            "password": os.environ["MYSQL_PASSWORD"],
+            "database": os.environ["MYSQL_DATABASE"],
+        }
+
     return pymysql.connect(
-        host=config["host"],
+        host=config.get("host", "db"),
         port=int(config.get("port", 3306)),
         user=config["user"],
         password=config["password"],
@@ -37,10 +97,13 @@ def get_connection(config: dict[str, Any]):
         charset="utf8mb4",
         cursorclass=DictCursor,
         autocommit=False,
+        client_flag=CLIENT.FOUND_ROWS,
         connect_timeout=10,
     )
+
+
 @contextmanager
-def connect(config: dict[str, Any]) -> Iterator[Any]:
+def connect(config: dict[str, Any] | None = None) -> Iterator[Any]:
     """Commit on success, roll back on failure, and close the connection."""
     connection = get_connection(config)
     try:
@@ -52,19 +115,34 @@ def connect(config: dict[str, Any]) -> Iterator[Any]:
     finally:
         connection.close()
 
-def initialize(config: dict[str, Any]) -> None:
+
+def initialize(config: dict[str, Any] | Path | None = None) -> None:
     """Initialize the MySQL database."""
+    # Support the existing initialize(_database_path) calling convention.
+    if isinstance(config, Path):
+        config = None
+
     with connect(config) as connection:
         with connection.cursor() as cursor:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS cars (
                     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                    make VARCHAR(100) NOT NULL,
-                    model VARCHAR(100) NOT NULL,
+                    make VARCHAR(60) NOT NULL,
+                    model VARCHAR(60) NOT NULL,
                     year INT NOT NULL,
-                    color VARCHAR(50) NOT NULL
+                    color VARCHAR(40) NOT NULL DEFAULT '',
+                    CONSTRAINT valid_make
+                        CHECK (CHAR_LENGTH(TRIM(make)) > 0),
+                    CONSTRAINT valid_model
+                        CHECK (CHAR_LENGTH(TRIM(model)) > 0),
+                    CONSTRAINT valid_year
+                        CHECK (year BETWEEN 1886 AND 2100)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             """)
+
+
+
+
 def list_cars(config: dict[str, Any]) -> list[Car]:
     with connect(config) as connection:
      with connection.cursor() as cursor:
